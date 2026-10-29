@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.20.0/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Payment gateway</h1>
+    <button id="paynow">Pay now</button>
+    <script>
+
+        document.getElementById("paynow").addEventListener("click", payNow)
+
+        async function payNow() {
+
+            const res = await axios.post("http://localhost:3000/api/payments/6ad4714756c5ac513c1841b1/order")
+
+            const payment = res.data;
+            console.log(res)
+            const rzp = new window.Razorpay({
+                key: payment.keyId,
+                order_id: payment.orderId,
+                amount: payment.amount,
+                currency: payment.currency,
+                name: "Kapda Co.",
+                description: "Canvas Tote Bag",
+
+                handler: async function (response){
+                    await axios.post("http://localhost:3000/api/payments/verify",{
+                        orderId: response.razorpay_order_id,
+                        paymentId: response.razorpay_payment_id,
+                        signature: response.razorpay_signature
+                    })
+                    console.log("razorpay response ", response)
+                }
+            });
+
+            rzp.open();
+        }
+    </script>
+</body>
+</html>
