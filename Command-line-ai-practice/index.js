@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { ChatGroq } from '@langchain/groq'
 import rl from 'readline/promises'
+import {} from 'langchain'
 
 const readline = rl.createInterface({
     input: process.stdin,
