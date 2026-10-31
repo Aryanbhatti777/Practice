@@ -2,7 +2,8 @@ import 'dotenv/config'
 import rl from 'readline/promises'
 import * as z from 'zod'
 import { ChatGroq } from '@langchain/groq'
-import { tool, createAgent } from 'langchain'
+import { tool, createAgent } from 'langchain';
+import { StateGraph, START, END } from '@langchain/langgraph';
 
 const events = [];
 
@@ -49,25 +50,29 @@ const model = new ChatGroq({
     apiKey: process.env.GROQ_API_KEY
 })
 
-const agent = createAgent({
-    model,
-    tools: [createEventTool, getEventsTool]
-})
+async function LLMNODE(state) {
+    console.log("LLMNODE state", state)
 
-while (true) {
-    const userInput = await readline.question("Ask anything: ");
-
-    const stream = await agent.stream({
+    return {
         messages: [
+            ...state.messages,
             {
-                role: "user",
-                content: userInput
+                role: "assistant",
+                content: "Hello, user"
             }
         ]
-    }, { streamMode: "messages" });
-
-    for await (const [chunk] of stream) {
-        process.stdout.write(chunk.content)
     }
-    process.stdout.write("\n")
 }
+
+const graph = new StateGraph(z.object({
+    messages: z.array(z.any())
+})).addNode("LLMNODE",LLMNODE).addEdge(START, "LLMNODE").addEdge("LLMNODE", END).compile()
+
+console.log(await graph.invoke({
+    messages: [
+        {
+            role: 'user',
+            content: "Hello world"
+        }
+    ]
+}))
